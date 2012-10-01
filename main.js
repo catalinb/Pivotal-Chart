@@ -1,7 +1,7 @@
 
 // TODO: use an external file for login credentials
-var token = "d295943c69609f13a8ab03d6f2e22a87";
-var project_id = "646863";
+var token = "token";
+var project_id = "project_id";
 var base_url = "http://www.pivotaltracker.com/services/v3/projects/";
 
 // Load the Visualization API and the piechart package.
