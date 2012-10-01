@@ -18,17 +18,42 @@ function update() {
     });
 }
 
-var globalData = {}
+var globalStartDate = {};
+var globalEndDate = {};
 function parseResponse(data) {
   console.log(data);
-  globalData = data;
 
   // get iteration interval
-  startDate = data.getElementsByTagName("start")[0];
-  endDate = data.getElementsByTagName("finish")[0];
-  console.log(startDate);
-  $(".iteration").append(startDate.textContent);
-  $(".iteration").append(endDate.textContent);
+  startDate = parseDateString(data.getElementsByTagName("start")[0].textContent);
+  endDate = parseDateString(data.getElementsByTagName("finish")[0].textContent);
+  globalStartDate = startDate;
+  globalEndDate = endDate;
+  $(".iteration").append(startDate.toLocaleString() + " ");
+  $(".iteration").append(endDate.toLocaleString());
+
+  // number of days
+  numberOfDays = (endDate - startDate) / (1000 * 24 * 60 * 60);
+  console.log("number of days: " + numberOfDays);
+
+  // chart data
+  chartData = google.visualization.arrayToDataTable([
+  ['Day', 'Ideal Progress', 'Actual Progress'],
+  [ 1, 5, 0],
+  [ 2, 10, 0]
+  ]);
+
+  var options = {
+    title: 'Burn up'
+  };
+
+  // chart
+  var chart = new google.visualization.LineChart($(".chart")[0]);
+  chart.draw(chartData, options);
+}
+
+function parseDateString(date) {
+  date = date.split(/\s/g);
+  return new Date(date[0] + " " + date[1]);
 }
 
 function debug(data) {
