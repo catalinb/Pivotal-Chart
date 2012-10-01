@@ -1,9 +1,3 @@
-
-// TODO: use an external file for login credentials
-var token = "token";
-var project_id = "project_id";
-var base_url = "http://www.pivotaltracker.com/services/v3/projects/";
-
 // Load the Visualization API and the piechart package.
 google.load('visualization', '1.0', {'packages':['corechart']}, update);
 google.setOnLoadCallback(update);
@@ -11,11 +5,11 @@ google.setOnLoadCallback(update);
 function update() {
   // get current iteration:
   $.ajax({
-    url : base_url + project_id + "/iterations/current",
+    url : config.baseURL + config.project + "/iterations/current",
     crossDomain : true,
     dataType : "xml",
     headers : {
-      "X-TrackerToken" : token
+      "X-TrackerToken" : config.token
     }}).success(function(data, textStatus, jqXHR) {
       parseResponse(data);
       debug(data);
