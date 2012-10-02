@@ -36,10 +36,14 @@ function parseResponse(data) {
   console.log("number of days: " + numberOfDays);
 
   // chart data
-  chartData = google.visualization.arrayToDataTable([
-  ['Day', 'Ideal Progress', 'Actual Progress'],
-  [ 1, 5, 0],
-  [ 2, 10, 0]
+  chartData = new google.visualization.DataTable();
+  chartData.addColumn('date', 'Day of the week');
+  chartData.addColumn('number', 'Actual progress');
+  chartData.addColumn('number', 'Ideal progress');
+  chartData.addRows([
+    [startDate, 0, 0],
+    [startDate, sfa0, 0],
+    [endDate, 12, 25]
   ]);
 
   var options = {
@@ -51,9 +55,18 @@ function parseResponse(data) {
   chart.draw(chartData, options);
 }
 
+// utility functions
 function parseDateString(date) {
   date = date.split(/\s/g);
   return new Date(date[0] + " " + date[1]);
+}
+
+function replicate (n, x) {
+  var xs = [];
+  for (var i = 0; i < n; ++i) {
+    xs.push (x);
+  }
+  return xs;
 }
 
 function debug(data) {
