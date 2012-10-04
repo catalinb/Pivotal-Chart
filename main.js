@@ -42,7 +42,7 @@ function parseResponse(data) {
   chartData.addColumn('number', 'Ideal progress');
   chartData.addRows([
     [startDate, 0, 0],
-    [startDate, sfa0, 0],
+    [startDate, 0, 0],
     [endDate, 12, 25]
   ]);
 
