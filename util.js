@@ -1,7 +1,7 @@
 // utility functions
 function parseDateString(date) {
   date = date.split(/\s/g);
-  return new Date(date[0] + " " + date[1]);
+  return new Date(date[0]);
 }
 
 function replicate (n, x) {

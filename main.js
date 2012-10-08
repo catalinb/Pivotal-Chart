@@ -2,6 +2,23 @@
 google.load('visualization', '1.0', {'packages':['corechart']}, update);
 google.setOnLoadCallback(update);
 
+// refresh page
+var lastRefreshTime = (new Date()).getTime();
+
+function refresh() {
+  timeLeft = config.refreshTime - Math.round(((new Date()).getTime() - lastRefreshTime) / 1000);
+  if (timeLeft <= 0) {
+    window.location.reload(true);
+  }
+
+  $("#messageHead")[0].innerHTML = "Refreshing in: ";
+  $("#countdown")[0].innerHTML = timeLeft;
+  $("#messageTail")[0].innerHTML = "seconds.";
+  setTimeout(refresh, 1000);
+}
+
+setTimeout(refresh, 1500);
+
 function update() {
   // get current iteration:
   $.ajax({
@@ -24,54 +41,57 @@ function parseResponse(data) {
   startDate = parseDateString(data.getElementsByTagName("start")[0].textContent);
   endDate = parseDateString(data.getElementsByTagName("finish")[0].textContent);
   currentDate = new Date();
-  $(".iteration").append(startDate.toLocaleString() + " ");
-  $(".iteration").append(endDate.toLocaleString());
-
-  // number of days
-  numberOfDays = daysBetween(startDate, endDate);
-  console.log("number of days: " + numberOfDays);
 
   // chart data
-  var totalStoryPoints = 0;
-  var acceptedStories = [];
   chartData = new google.visualization.DataTable();
   chartData.addColumn('date', 'Day of the week');
   chartData.addColumn('number', 'Actual');
   chartData.addColumn('number', 'Ideal');
-  chartData.addRows(numberOfDays);
+
+  var totalStoryPoints = 0;
+  var totalAcceptedStoryPoints = 0;
+
+  var acceptedStories = [];
+  for (loopDate = new Date(startDate); loopDate.valueOf() < endDate.valueOf() + 86400000; loopDate.setTime(loopDate.valueOf() + 86400000)) {
+    if (loopDate <= currentDate) {
+      acceptedStories[new Date(loopDate)] = [0, 0];
+    } else {
+      acceptedStories[new Date(loopDate)] = [null, 0];
+    }
+  }
 
   // determine the number of accepted stories
   story = $("story", data);
   console.log(story);
   for (i = 0; i < story.length; i++) {
     estimate = parseInt($("estimate", story[i])[0].textContent);
-    console.log(estimate);
-
     totalStoryPoints += estimate;
-    console.log("total story points: " + totalStoryPoints);
 
     acceptedInfo = $("accepted_at", story[i]);
     if (acceptedInfo.length > 0) {
       date = parseDateString(acceptedInfo[0].textContent);
-      console.log("accepted on: " + date.toLocaleString());
-      acceptedStories.push([date, estimate]);
+      acceptedStories[date][0] += estimate;
     }
   }
 
-  chartData.setCell(0, 0, startDate);
-  chartData.setCell(0, 2, 0);
-  chartData.setCell(1, 0, endDate);
-  chartData.setCell(1, 2, totalStoryPoints);
-
-  chartData.setCell(0, 1, 0);
-
-  for (i = 0; i < acceptedStories.length; i++) {
-    chartData.setCell(i, 0, acceptedStories[i][0]);
-    chartData.setCell(i, 1, acceptedStories[i][1]);
+  for (loopDate = new Date(startDate), currentActual = 0, currentIdeal = 0; loopDate.valueOf() < currentDate.valueOf() + 86400000; loopDate.setTime(loopDate.valueOf() + 86400000)) {
+    if (loopDate <= currentDate) {
+      currentActual += acceptedStories[loopDate][0];
+    } else {
+      currentActual = null;
+    }
+    chartData.addRows([[new Date(loopDate), currentActual, currentIdeal]]);
+    currentIdeal += totalStoryPoints / daysBetween(startDate, endDate);
   }
 
+  chartData.addRows([[endDate, null, totalStoryPoints]]);
+
   var options = {
-    title: 'Burn up'
+    title: 'Burn up',
+    lineWidth: 7,
+    colors: ["#0101DF", "#F3E2A9", "#FF4000"],
+    hAxis: {title: 'Day'},
+    vAxis: {title: 'Accepted points'}
   };
 
   // chart
