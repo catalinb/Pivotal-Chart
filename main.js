@@ -12,39 +12,63 @@ function update() {
       "X-TrackerToken" : config.token
     }}).success(function(data, textStatus, jqXHR) {
       parseResponse(data);
-      debug(data);
     }).error(function() {
       alert("error");
     });
 }
 
-var globalStartDate = {};
-var globalEndDate = {};
 function parseResponse(data) {
   console.log(data);
 
   // get iteration interval
   startDate = parseDateString(data.getElementsByTagName("start")[0].textContent);
   endDate = parseDateString(data.getElementsByTagName("finish")[0].textContent);
-  globalStartDate = startDate;
-  globalEndDate = endDate;
+  currentDate = new Date();
   $(".iteration").append(startDate.toLocaleString() + " ");
   $(".iteration").append(endDate.toLocaleString());
 
   // number of days
-  numberOfDays = (endDate - startDate) / (1000 * 24 * 60 * 60);
+  numberOfDays = daysBetween(startDate, endDate);
   console.log("number of days: " + numberOfDays);
 
   // chart data
+  var totalStoryPoints = 0;
+  var acceptedStories = [];
   chartData = new google.visualization.DataTable();
   chartData.addColumn('date', 'Day of the week');
-  chartData.addColumn('number', 'Actual progress');
-  chartData.addColumn('number', 'Ideal progress');
-  chartData.addRows([
-    [startDate, 0, 0],
-    [startDate, 0, 0],
-    [endDate, 12, 25]
-  ]);
+  chartData.addColumn('number', 'Actual');
+  chartData.addColumn('number', 'Ideal');
+  chartData.addRows(numberOfDays);
+
+  // determine the number of accepted stories
+  story = $("story", data);
+  console.log(story);
+  for (i = 0; i < story.length; i++) {
+    estimate = parseInt($("estimate", story[i])[0].textContent);
+    console.log(estimate);
+
+    totalStoryPoints += estimate;
+    console.log("total story points: " + totalStoryPoints);
+
+    acceptedInfo = $("accepted_at", story[i]);
+    if (acceptedInfo.length > 0) {
+      date = parseDateString(acceptedInfo[0].textContent);
+      console.log("accepted on: " + date.toLocaleString());
+      acceptedStories.push([date, estimate]);
+    }
+  }
+
+  chartData.setCell(0, 0, startDate);
+  chartData.setCell(0, 2, 0);
+  chartData.setCell(1, 0, endDate);
+  chartData.setCell(1, 2, totalStoryPoints);
+
+  chartData.setCell(0, 1, 0);
+
+  for (i = 0; i < acceptedStories.length; i++) {
+    chartData.setCell(i, 0, acceptedStories[i][0]);
+    chartData.setCell(i, 1, acceptedStories[i][1]);
+  }
 
   var options = {
     title: 'Burn up'
@@ -54,37 +78,4 @@ function parseResponse(data) {
   var chart = new google.visualization.LineChart($(".chart")[0]);
   chart.draw(chartData, options);
 }
-
-// utility functions
-function parseDateString(date) {
-  date = date.split(/\s/g);
-  return new Date(date[0] + " " + date[1]);
-}
-
-function replicate (n, x) {
-  var xs = [];
-  for (var i = 0; i < n; ++i) {
-    xs.push (x);
-  }
-  return xs;
-}
-
-function debug(data) {
-      var response = xml_to_string(data);
-      response = response.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      $("#debug").append(response);
-}
-
-function xml_to_string(xml_node) {
-  if (xml_node.xml)
-    return xml_node.xml;
-  else if (XMLSerializer) {
-    var xml_serializer = new XMLSerializer();
-    return xml_serializer.serializeToString(xml_node);
-  } else {
-    alert("ERROR: Extremely old browser");
-    return "";
-  }
-}
-
 
