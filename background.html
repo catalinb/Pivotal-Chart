@@ -1,10 +1,9 @@
-<script>
-var viewerPort = null;
-
-chrome.browserAction.onClicked.addListener(ButtonClicked);
-
-function ButtonClicked (tab)
-{
-chrome.tabs.create({url:"index.html"});
-}
+<html>
+<head>
+<script type="text/javascript" src="background.js">
 </script>
+</head>
+<body>
+<div id='content' style="background-color:red;width:100px;height:100px"></div>
+</body>
+</html>

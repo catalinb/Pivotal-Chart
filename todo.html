@@ -1,0 +1,238 @@
+<html>
+<head>
+
+<script type="text/javascript" src="lib/jquery-1.7.2.min.js"></script>
+<script type="text/javascript">
+
+
+function ActionItem(text, owner, status) {
+	this.text = text;
+	this.owner = owner;
+	this.status = status;
+}
+
+function err(text) {
+	$("#status-text").html(text);
+	$("#status-text").css("color", "red");
+	console.log("ERROR : " + text);
+}
+
+function warn(text) {
+	$("#status-text").html(text);
+	$("#status-text").css("color", "orange");
+	console.log("WARN : " + text);
+}
+
+function status(text) {
+	$("#status-text").html(text);
+	$("#status-text").css("color", "#170B3B");
+	console.log("STATUS : " + text);
+}
+
+var SEARCHING_AI = 0;
+var SEARCHING_OWNER = 1;
+var SEARCHING_STATUS = 2;
+var SEARCHING_CLOSE_TAG = 3;
+
+var NOT_DONE = 0;
+var DONE = 1;
+var WORKING = 2;
+
+function parseSummary(sprintName, data) {
+	if (sprintName == null || data == null) {
+		err("Malformed retrospective summary data");
+		return;
+	}
+
+	var state = SEARCHING_AI;
+	var cstr = $(data).text();
+	var stop = false;
+
+	var owner  = "";
+	var aistatus = NOT_DONE;
+	var text = "";
+
+	var actionItems = new Array();
+
+	while (!stop) {
+		switch(state) {
+			case SEARCHING_AI:
+				var idx = cstr.indexOf("[ai");
+				if (idx == -1) {
+					// no more action items
+					stop = true;
+					break;
+				}
+				cstr = cstr.substring(idx + "[ai".length);
+				state = SEARCHING_OWNER;
+				break;
+			case SEARCHING_OWNER:
+				var idxStart = cstr.indexOf("|");
+				if (idxStart == -1) {
+					warn("Cannot retrieve owner for action item. Currently parsing " + cstr.substring(0, 15 > cstr.length ? cstr.length:15));
+					state = SEARCHING_AI;
+					break;
+				}
+				idxStart++;
+				cstr = cstr.substring(idxStart);
+				if (cstr == null) {
+					warn("Cannot retrieve owner for action item. Currently parsing " + cstr.substring(0, 15 > cstr.length ? cstr.length:15));
+					state = SEARCHING_AI;
+					break;
+				}
+				var idxEnd = cstr.indexOf("|");
+				if (idxEnd > cstr.indexOf("]")) {
+					warn("Cannot retrieve owner for action item. Currently parsing " + cstr.substring(0, 15 > cstr.length ? cstr.length:15));
+					state = SEARCHING_AI;
+					break;
+				}
+				owner = cstr.substring(0, idxEnd);
+				cstr = cstr.substring(idxEnd + 1);
+				state = SEARCHING_STATUS;
+				break;
+			case SEARCHING_STATUS:
+				if (cstr.indexOf("yes]") == 0) {
+					aistatus = DONE;
+					cstr = cstr.substring("yes]".length);
+					state = SEARCHING_CLOSE_TAG;
+				} else if (cstr.indexOf("no]") == 0) {
+					cstr = cstr.substring("no]".length);
+					aistatus = NOT_DONE;
+					state = SEARCHING_CLOSE_TAG;
+				} else if (cstr.indexOf("working]") == 0) {
+					cstr = cstr.substring("working]".length);
+					aistatus = WORKING;
+					state = SEARCHING_CLOSE_TAG;
+				} else {
+					warn("Cannot retrieve status for action item. Currently parsing " + cstr.substring(0, 15 > cstr.length ? cstr.length:15));
+					state = SEARCHING_AI;
+				}
+				break;
+			case SEARCHING_CLOSE_TAG:
+				var idx = cstr.indexOf("[/ai]");
+				if (idx < 0) {
+					warn("Cannot find closing tag for summary. Currently parsing " + cstr.substring(0, 15 > cstr.length ? cstr.length:15));
+					state = SEARCHING_AI;
+					break;
+				}
+				text = cstr.substring(0, idx);
+				cstr = cstr.substring(idx + "[/ai]".length);
+				state = SEARCHING_AI;
+				actionItems.push(new ActionItem(text, owner, aistatus));
+				break;
+			}
+
+	}
+
+	var font_size = "25px";
+	var aiTextClass = "aiText";
+	var aiOwnerClass = "aiOwner";
+	var tableRowClass = "tableRowClass";
+	
+	var tstring = "";
+	tstring += "<table class='action-items-holder' style='font-size: " + font_size + ";'>";
+//	tstring += "<tr>";
+//	tstring += "<th>Action Item</th>";
+//	tstring += "<th>Owner</th>";
+//	tstring += "<th>Status</th>";
+//	tstring += "</tr>";
+
+	for (var i = 0; i < actionItems.length; i++) {
+		tstring += "<tr class=" + tableRowClass + ">";
+		tstring += "<td class=" + aiTextClass + ">" + actionItems[i].text + "</td>";
+		tstring += "<td class=" + aiOwnerClass + ">" + actionItems[i].owner + "</td>";
+		var img = "";
+		if (actionItems[i].status === DONE) {
+			img = "Yes_check.svg";
+		} else if (actionItems[i].status === NOT_DONE) {
+			img = "Not_done.svg";
+		} else if(actionItems[i].status === WORKING) {
+			img = "Work_in_progress.svg";
+		}
+		tstring += "<td>" + "<img src='images/" + img + "' style='width: " + font_size + "; height: " + font_size + ";'/>" + "</td>";
+		tstring += "</tr>";
+	}
+	tstring += "</table>";
+	$("#action-items-holder").empty();
+	$("#action-items-holder").append(tstring);
+	status("Action Items from Sprint Retrospective");
+};
+
+function getRetrospectiveSummary() {
+	  status("Querying V1 to determine action items ...");
+   var url = "https://www13.v1host.com/Adobe05/rest-1.v1/Data/Timebox?where=State.Code='CLSD'&find='WEF'&sel=Name,BeginDate,EndDate&sort=-BeginDate&page=1,0";
+   $.get(url, function(data) {
+   				status("");
+   				var sprintName = $(data).find("Attribute[name='Name']").text();
+   				if (sprintName == null) {
+  					err("Error retrieving the last closed sprint");
+  					return;
+  				}
+  				var url = "https://www13.v1host.com/Adobe05/rest-1.v1/Data/Retrospective?where=Timebox.Name='" + sprintName + 
+  				"'&sel=Summary";
+  				console.log(url);
+
+  				$.get(url, function(data) { 
+  					console.log(data);
+  					parseSummary(sprintName, $(data).find("Attribute[name='Summary']").text()); 
+  				})
+  				.error(function() {
+  					err("Could not retrieve summary data from V1. Perhaps you should <a href='https://www13.v1host.com/Adobe05/Account.mvc/LogIn'>log in</a>.");
+  				});
+
+			})
+   .error(function() { 
+				err("Could not retrieve data from V1. Perhaps you should <a href='https://www13.v1host.com/Adobe05/Account.mvc/LogIn'>log in</a>.");
+			});
+}
+
+ $(document).ready(function(){
+ 	getRetrospectiveSummary();
+	setInterval("getRetrospectiveSummary()", 10 * 60 * 1000);
+ });
+	
+</script>
+
+
+<style type="text/css">
+
+#status-text {
+	color : #170B3B;
+	text-align : center;
+	width : 100%;
+	font-size : 25px;
+	font-weight : bold;
+}
+
+.ai_table {
+
+}
+
+.tableRowClass {
+}
+
+.aiText {
+	font-family:Georgia, serif;
+	background-color: #F9F9FF;
+	box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+
+.aiOwner {
+	font-family:Georgia, serif;
+	color: #104E8B;
+	font-size : 0.8 em;
+	box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+
+.action-items-holder {
+   border-spacing: 10px;
+}
+
+</style>
+
+</head>
+<body>
+<p id="status-text">Starting the application.</p>
+<p id="action-items-holder"></p>
+</body>
+</html>

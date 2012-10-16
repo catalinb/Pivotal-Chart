@@ -1,14 +1,16 @@
 {
-	"name" : "Extension",
-	"version" : "1.0",
-	"manifest_version" : 1,
-	"description" : "Test chrome extension.",
-	"background_page" : "background.html",
-	"browser_action" : {
-		"default_icon" : "icon.png"
-	},
-	"permissions" : [
-		"tabs",
-    "http://www.pivotaltracker.com/services/v3/projects/"
-	]
+  "name": "Dashboard",
+  "version": "1.0",
+  "manifest_version" : 1,
+  "description": "Dashboard",
+  "background_page": "background.html",
+  "browser_action": {
+    "default_title": "Dashboard",
+	"default_icon": "info.png"
+  },
+  "permissions": [
+	"tabs",
+	"http://*/",
+	"https://*/"
+  ]
 }

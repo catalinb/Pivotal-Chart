@@ -85,9 +85,10 @@ function parseResponse(data) {
   }
 
   chartData.addRows([[endDate, null, totalStoryPoints]]);
+  console.log("Config: " + config.project);
 
   var options = {
-    title: 'Burn up',
+    title: config.title,
     lineWidth: 7,
     colors: ["#0101DF", "#F3E2A9", "#FF4000"],
     hAxis: {title: 'Day'},
