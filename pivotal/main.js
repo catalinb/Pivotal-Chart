@@ -45,8 +45,8 @@ function parseResponse(data) {
   // chart data
   chartData = new google.visualization.DataTable();
   chartData.addColumn('date', 'Day of the week');
-  chartData.addColumn('number', 'Actual');
   chartData.addColumn('number', 'Ideal');
+  chartData.addColumn('number', 'Actual');
 
   var totalStoryPoints = 0;
   var totalAcceptedStoryPoints = 0;
@@ -56,7 +56,7 @@ function parseResponse(data) {
     if (loopDate <= currentDate) {
       acceptedStories[new Date(loopDate)] = [0, 0];
     } else {
-      acceptedStories[new Date(loopDate)] = [null, 0];
+      acceptedStories[new Date(loopDate)] = [0, null];
     }
   }
 
@@ -70,27 +70,27 @@ function parseResponse(data) {
     acceptedInfo = $("accepted_at", story[i]);
     if (acceptedInfo.length > 0) {
       date = parseDateString(acceptedInfo[0].textContent);
-      acceptedStories[date][0] += estimate;
+      acceptedStories[date][1] += estimate;
     }
   }
 
   for (loopDate = new Date(startDate), currentActual = 0, currentIdeal = 0; loopDate.valueOf() < currentDate.valueOf() + 86400000; loopDate.setTime(loopDate.valueOf() + 86400000)) {
     if (loopDate <= currentDate) {
-      currentActual += acceptedStories[loopDate][0];
+      currentActual += acceptedStories[loopDate][1];
     } else {
       currentActual = null;
     }
-    chartData.addRows([[new Date(loopDate), currentActual, currentIdeal]]);
+    chartData.addRows([[new Date(loopDate), currentIdeal, currentActual]]);
     currentIdeal += totalStoryPoints / daysBetween(startDate, endDate);
   }
 
-  chartData.addRows([[endDate, null, totalStoryPoints]]);
+  chartData.addRows([[endDate, totalStoryPoints, null]]);
   console.log("Config: " + config.project);
 
   var options = {
     title: config.title,
     lineWidth: 7,
-    colors: ["#0101DF", "#F3E2A9", "#FF4000"],
+    colors: ["#F3E2A9", "#0101DF", "#FF4000"],
     hAxis: {title: 'Day'},
     vAxis: {title: 'Accepted points'}
   };
