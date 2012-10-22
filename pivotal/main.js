@@ -1,6 +1,6 @@
 // Load the Visualization API and the piechart package.
-google.load('visualization', '1.0', {'packages':['corechart']}, update);
-google.setOnLoadCallback(update);
+google.load('visualization', '1.0', {'packages':['corechart']}, getIteration);
+google.setOnLoadCallback(getIteration);
 
 // refresh page
 var lastRefreshTime = (new Date()).getTime();
@@ -19,7 +19,7 @@ function refresh() {
 
 setTimeout(refresh, 1500);
 
-function update() {
+function getIteration() {
   // get current iteration:
   $.ajax({
     url : config.baseURL + config.project + "/iterations/current",
@@ -28,13 +28,28 @@ function update() {
     headers : {
       "X-TrackerToken" : config.token
     }}).success(function(data, textStatus, jqXHR) {
-      parseResponse(data);
+      getVelocity(data);
     }).error(function() {
       alert("error");
     });
 }
 
-function parseResponse(data) {
+function getVelocity(currentIterationData) {
+//http://www.pivotaltracker.com/services/v3/projects/$PROJECT_ID
+  $.ajax({
+    url : config.baseURL + config.project,
+    crossDomain : true,
+    dataType : "xml",
+    headers : {
+      "X-TrackerToken" : config.token
+    }}).success(function(data, textStatus, jqXHR) {
+      parseResponse(currentIterationData, data);
+    }).error(function() {
+      alert("error");
+    });
+}
+
+function parseResponse(data, velocity) {
   console.log(data);
 
   // get iteration interval
@@ -46,17 +61,19 @@ function parseResponse(data) {
   chartData = new google.visualization.DataTable();
   chartData.addColumn('date', 'Day of the week');
   chartData.addColumn('number', 'Ideal');
+  chartData.addColumn('number', 'Expected');
   chartData.addColumn('number', 'Actual');
 
   var totalStoryPoints = 0;
   var totalAcceptedStoryPoints = 0;
+  var velocity = parseInt($("current_velocity", velocity)[0].textContent);
 
   var acceptedStories = [];
   for (loopDate = new Date(startDate); loopDate.valueOf() < endDate.valueOf() + 86400000; loopDate.setTime(loopDate.valueOf() + 86400000)) {
     if (loopDate <= currentDate) {
-      acceptedStories[new Date(loopDate)] = [0, 0];
+      acceptedStories[new Date(loopDate)] = [0, 0, 0];
     } else {
-      acceptedStories[new Date(loopDate)] = [0, null];
+      acceptedStories[new Date(loopDate)] = [0, 0, null];
     }
   }
 
@@ -74,23 +91,24 @@ function parseResponse(data) {
     }
   }
 
-  for (loopDate = new Date(startDate), currentActual = 0, currentIdeal = 0; loopDate.valueOf() < currentDate.valueOf() + 86400000; loopDate.setTime(loopDate.valueOf() + 86400000)) {
+  for (loopDate = new Date(startDate), currentExpected = 0, currentActual = 0, currentIdeal = 0; loopDate.valueOf() < currentDate.valueOf() + 86400000; loopDate.setTime(loopDate.valueOf() + 86400000)) {
     if (loopDate <= currentDate) {
       currentActual += acceptedStories[loopDate][1];
     } else {
       currentActual = null;
     }
-    chartData.addRows([[new Date(loopDate), currentIdeal, currentActual]]);
+    chartData.addRows([[new Date(loopDate), currentIdeal, currentExpected, currentActual]]);
     currentIdeal += totalStoryPoints / daysBetween(startDate, endDate);
+    currentExpected += velocity / daysBetween(startDate, endDate);
   }
 
-  chartData.addRows([[endDate, totalStoryPoints, null]]);
+  chartData.addRows([[endDate, totalStoryPoints, velocity, null]]);
   console.log("Config: " + config.project);
 
   var options = {
     title: config.title,
     lineWidth: 7,
-    colors: ["#F3E2A9", "#0101DF", "#FF4000"],
+    colors: ["#F3E2A9","85B6FF", "#0101DF"],
     hAxis: {title: 'Day'},
     vAxis: {title: 'Accepted points'}
   };
