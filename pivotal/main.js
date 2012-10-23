@@ -60,8 +60,8 @@ function parseResponse(data, velocity) {
   // chart data
   chartData = new google.visualization.DataTable();
   chartData.addColumn('date', 'Day of the week');
-  chartData.addColumn('number', 'Ideal');
-  chartData.addColumn('number', 'Expected');
+  chartData.addColumn('number', 'Total');
+  chartData.addColumn('number', 'Velocity');
   chartData.addColumn('number', 'Actual');
 
   var totalStoryPoints = 0;
