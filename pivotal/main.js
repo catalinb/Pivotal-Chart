@@ -35,6 +35,7 @@ function getIteration() {
 }
 
 function getVelocity(currentIterationData) {
+console.log(currentIterationData);
 //http://www.pivotaltracker.com/services/v3/projects/$PROJECT_ID
   $.ajax({
     url : config.baseURL + config.project,
@@ -55,7 +56,14 @@ function parseResponse(data, velocity) {
   // get iteration interval
   startDate = parseDateString(data.getElementsByTagName("start")[0].textContent);
   endDate = parseDateString(data.getElementsByTagName("finish")[0].textContent);
+
+  // adjust hours to remove daylight saving differences
+  startDate.setUTCHours(0);
+  console.log("start date: " + startDate.toUTCString());
+  startDate.setUTCHours(0);
+
   currentDate = new Date();
+  currentDate.setUTCHours(0);
 
   // chart data
   chartData = new google.visualization.DataTable();
@@ -75,6 +83,7 @@ function parseResponse(data, velocity) {
     } else {
       acceptedStories[new Date(loopDate)] = [0, 0, null];
     }
+    console.log(loopDate.toUTCString());
   }
 
   // determine the number of accepted stories
@@ -87,6 +96,8 @@ function parseResponse(data, velocity) {
     acceptedInfo = $("accepted_at", story[i]);
     if (acceptedInfo.length > 0) {
       date = parseDateString(acceptedInfo[0].textContent);
+      date.setUTCHours(0);
+      console.log(date.toUTCString());
       acceptedStories[date][1] += estimate;
     }
   }

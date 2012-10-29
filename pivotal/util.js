@@ -1,7 +1,10 @@
 // utility functions
 function parseDateString(date) {
   date = date.split(/\s/g);
-  return new Date(date[0]);
+
+  date = new Date(date[0]);
+  date.setTime(date.valueOf() + 3 * 3600000); // apply timezone correction
+  return date;
 }
 
 function replicate (n, x) {
