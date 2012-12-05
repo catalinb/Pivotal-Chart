@@ -117,11 +117,11 @@ function parseResponse(data, velocity) {
   console.log("Config: " + config.project);
 
   var options = {
-    title: config.title,
-    lineWidth: 7,
-    colors: ["#F3E2A9","85B6FF", "#0101DF"],
-    hAxis: {title: 'Day'},
-    vAxis: {title: 'Accepted points'}
+    "title": config.title,
+    "lineWidth": 7,
+    "colors": ["#F3E2A9","85B6FF", "#0101DF"],
+    "hAxis": {"title": 'Day'},
+    "vAxis": {"title": 'Accepted points'}
   };
 
   // chart

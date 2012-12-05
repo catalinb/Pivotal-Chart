@@ -1,13 +1,14 @@
 {
   "name": "Dashboard",
   "version": "1.0",
-  "manifest_version" : 1,
+  "manifest_version" : 2,
   "description": "Dashboard",
-  "background_page": "background.html",
+  "background": {"page": "background.html"},
   "browser_action": {
     "default_title": "Dashboard",
 	"default_icon": "info.png"
   },
+  "content_security_policy": "script-src 'self' https://*/ 'unsafe-eval'; object-src 'self'",
   "permissions": [
 	"tabs",
 	"http://*/",
