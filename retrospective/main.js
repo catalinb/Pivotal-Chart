@@ -6,7 +6,7 @@ var rdata;
 globalData = {};
 
 function extractlist(data) {
-    var from = data.indexOf("<p>Action Items");
+    var from = data.indexOf("<p>Action items");
 
     var to = data.indexOf("Sprint retrospective", from);
     //to = data.indexOf("</ul>", to) + 10;
