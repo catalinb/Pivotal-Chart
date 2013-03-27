@@ -1,0 +1,5 @@
+#bt {
+	width: 95%;
+	height: 95%;
+	-webkit-transition: -webkit-transform 2s;
+}
